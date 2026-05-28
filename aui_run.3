@@ -1,0 +1,68 @@
+.Dd $Mdocdate: May 27 2026$
+.Dt AUI_RUN 3
+.Os
+.Sh NAME
+.Nm aui_run ,
+.Nm aui_free ,
+.Nm aui_window_new ,
+.Nm aui_button_new ,
+.Nm aui_place ,
+.Nm aui_pack ,
+.Nm aui_grid ,
+.Nm aui_getplacepar ,
+.Nm aui_getgridpar ,
+.Nm aui_getpackpar
+.Sh SYNOPSIS
+.In aui.h
+.Ft void
+.Fn aui_run "void"
+.Ft void
+.Fn aui_free "struct aui_widget *"
+.Ft struct aui_window*
+.Fn aui_window_new "void"
+.Ft struct aui_button*
+.Fn aui_button_new "struct aui_widget * parent"
+.Ft struct aui_frame*
+.Fn aui_frame_new "struct aui_widget * parent"
+.Ft struct aui_canvas*
+.Fn aui_canvas_new "struct aui_widget * parent"
+.Ft int
+.Fn aui_place "struct aui_widget * widget" "struct aui_placepar *"
+.Ft int
+.Fn aui_grid "struct aui_widget * widget" "struct aui_gridpar *"
+.Ft int
+.Fn aui_pack "struct aui_widget * widget" "struct aui_packpar *"
+.Ft int
+.Fn aui_getplacepar "struct aui_widget * widget"
+.Ft int
+.Fn aui_getgridpar "struct aui_widget * widget"
+.Ft int
+.Fn aui_getpackpar "struct aui_widget * widget"
+.Sh DESCRIPTION
+Assides for windows, every widget must take a container in order to be
+created. The containers can be a window or a frame. Once a widget is
+created it can be mapped using place, grid or pack.
+.Pp
+Canvases are also containers although they cannot take widgets as childrens.
+.Sh SIMPLE EXAMPLE
+.Bd -literal -offset
+#include <aui.h>
+
+int
+main(void)
+{
+    struct aui_window *aw = aui_window_new();
+
+    aui_run();
+
+    return 0;
+}
+.Ed
+.Sh RETURN VALUES
+For all these function, if the output is -1 or NULL it means an error. Otherwise,
+the function was successful.
+.Sh AUTHORS
+The
+.Nm aui
+library was written by
+.An Onana Onana Xavier Manuel .
