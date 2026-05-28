@@ -36,7 +36,6 @@ aui_window_new(void)
     }
 
     struct aui_window *aw = driver->ops->create_window();
-    struct aui_container *con = (struct aui_container *)aw;
     struct aui_widget *widget = (struct aui_widget *)aw;
     widget->type = WIDGET_TYPE_WINDOW;
 
@@ -65,6 +64,7 @@ static void
 window_mouse_hover(struct aui_widget *widget, uint16_t x, uint16_t y)
 {
     struct aui_window *aw = (struct aui_window *)widget;
+    struct aui_container *con = (struct aui_container *)widget;
     struct aui_widget *tohover = NULL;
     struct aui_widget *child;
 
@@ -73,10 +73,10 @@ window_mouse_hover(struct aui_widget *widget, uint16_t x, uint16_t y)
             tohover = child;
     }
 
-    if (tohover != aw->focus.hover && aw->focus.hover != NULL)
-        aw->focus.hover->in_ops->mouse_unhover(aw->focus.hover);
+    if (tohover != con->focus.hover && con->focus.hover != NULL)
+        con->focus.hover->in_ops->mouse_unhover(con->focus.hover);
 
-    aw->focus.hover = tohover;
+    con->focus.hover = tohover;
 
     if (tohover != NULL)
         tohover->in_ops->mouse_hover(tohover, x, y);
@@ -91,6 +91,7 @@ window_mouse_unhover(struct aui_widget *widget)
 static void 
 window_mouse_press(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t button)
 {
+    struct aui_container *con = (struct aui_container *)widget;
     struct aui_window *aw = (struct aui_window *)widget;
     struct aui_widget *topress = NULL;
     struct aui_widget *child;
@@ -100,10 +101,10 @@ window_mouse_press(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t bu
             topress = child;
     }
 
-    if (topress != aw->focus.press && aw->focus.press != NULL)
-        aw->focus.press->in_ops->mouse_release(aw->focus.press, x, y, button);
+    if (topress != con->focus.press && con->focus.press != NULL)
+        con->focus.press->in_ops->mouse_release(con->focus.press, x, y, button);
 
-    aw->focus.press = topress;
+    con->focus.press = topress;
 
     if (topress != NULL)
         topress->in_ops->mouse_press(topress, x, y, button);
@@ -112,11 +113,12 @@ window_mouse_press(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t bu
 static void 
 window_mouse_release(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t button)
 {
+    struct aui_container *con = (struct aui_container *)widget;
     struct aui_window *aw = (struct aui_window *)widget;
 
-    if (aw->focus.press != NULL) {
-        aw->focus.press->in_ops->mouse_release(aw->focus.press, x, y, button);
-        aw->focus.press = NULL;
+    if (con->focus.press != NULL) {
+        con->focus.press->in_ops->mouse_release(con->focus.press, x, y, button);
+        con->focus.press = NULL;
 
         window_mouse_hover(widget, x, y);
     }

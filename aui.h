@@ -1,6 +1,8 @@
 #ifndef __AUI_H__
 #define __AUI_H__
 
+#define AUI_WIDGET(widget) (struct aui_widget *) widget
+
 struct aui_color {
     unsigned char red;
     unsigned char green;
@@ -16,7 +18,16 @@ struct aui_placepar {
     unsigned int height;
     float relwidth;
     float relheight;
-    const char *anchor;  /* n, ne, e, se, s, sw, w, nw or center */
+#define AUI_ANCHOR_NW       0
+#define AUI_ANCHOR_N        1
+#define AUI_ANCHOR_E        2
+#define AUI_ANCHOR_SE       3
+#define AUI_ANCHOR_S        4
+#define AUI_ANCHOR_SW       5
+#define AUI_ANCHOR_W        6
+#define AUI_ANCHOR_NE       7
+#define AUI_ANCHOR_CENTER   8
+    unsigned char anchor;
 };
 
 struct aui_packpar {

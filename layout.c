@@ -25,29 +25,104 @@ can_add(struct aui_widget *widget, enum aui_layout_type type)
     return 0;
 }
 
+void
+layout_organize(struct aui_widget *widget)
+{
+    struct aui_container *con = (struct aui_container *)widget;
+    struct aui_widget *child;
+    int dx, dy;
+
+    switch (con->layout_type) {
+    case AUI_LAYOUT_PLACE:
+        TAILQ_FOREACH(child, &widget->queue, entries) {
+            if (child->mapped == 0)
+                continue;
+
+            struct aui_placepar *par = &child->placepar;
+
+            struct aui_geometry geom = { 
+                .x = widget->geom.x + child->placepar.x + widget->geom.width * child->placepar.relx,
+                .y = widget->geom.y + child->placepar.y + widget->geom.height * child->placepar.rely,
+                .width = child->placepar.width + child->placepar.relwidth * widget->geom.width,
+                .height = child->placepar.height + child->placepar.relheight * widget->geom.height };
+
+            switch (par->anchor) {
+            case AUI_ANCHOR_NW:
+                dx = 0;
+                dy = 0;
+                break;
+            case AUI_ANCHOR_NE:
+                dx = -geom.width;
+                dy = 0;
+                break;
+            case AUI_ANCHOR_N:
+                dx = -geom.width / 2;
+                dy = 0;
+                break;
+            case AUI_ANCHOR_W:
+                dx = 0;
+                dy = -geom.height / 2;
+                break;
+            case AUI_ANCHOR_E:
+                dx = -geom.width;
+                dy = -geom.height /2;
+                break;
+            case AUI_ANCHOR_SE:
+                dx = -geom.width;
+                dy = -geom.height;
+                break;
+            case AUI_ANCHOR_SW:
+                dx = 0;
+                dy = -geom.height;
+                break;
+            case AUI_ANCHOR_S:
+                dx = -geom.width / 2;
+                dy = -geom.height;
+                break;
+            case AUI_ANCHOR_CENTER:
+                dx = -geom.width / 2;
+                dy = -geom.height / 2;
+                break;
+            default:
+                break;
+            }
+
+            geom.x += dx;
+            geom.y += dy;
+            child->in_ops->set_geometry(child, &geom); 
+
+            switch (child->type) {
+            case WIDGET_TYPE_FRAME:
+                layout_organize(child);
+                break;
+            default:
+                break;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 int 
 aui_place(struct aui_widget *widget, struct aui_placepar *par)
 {
     int check = can_add(widget, AUI_LAYOUT_PLACE);
+    struct aui_widget *parent;
+    struct aui_container *con;
 
     if (check == -1)
         return -1;
 
-    struct aui_container *con = (struct aui_container *)widget->parent;
-    struct aui_geometry geom = { .x = par->x, .y = par->y, 
-                                 .width = par->width, 
-                                 .height = par->height };
+    con = (struct aui_container *)widget->parent;
+    parent = (struct aui_widget *)widget->parent;
+    con->layout_type = AUI_LAYOUT_PLACE;
+    widget->placepar = *(par);
+    widget->mapped = 1;
 
-    widget->geom = geom;
+    layout_organize(parent);
 
-    if (widget->in_ops->set_geometry) {
-        widget->in_ops->set_geometry(widget, &geom);
-        widget->window->draw_flag = 1;
-        widget->mapped = 1;
-
-        con->map_count++;
-        con->layout_type = AUI_LAYOUT_PLACE;
-    }
     return 0;
 }
 
@@ -70,5 +145,12 @@ aui_grid(struct aui_widget *widget, struct aui_gridpar *par)
     if (check == -1)
         return -1;
 
+    return 0;
+}
+
+int
+aui_getplacepar(struct aui_widget *widget, struct aui_placepar *par)
+{
+    *par = widget->placepar;
     return 0;
 }

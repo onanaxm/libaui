@@ -55,6 +55,11 @@ struct aui_container {
     struct aui_widget widget;
     unsigned int map_count;
     enum aui_layout_type layout_type;
+
+    struct container_focus {
+        struct aui_widget *press;
+        struct aui_widget *hover;
+    } focus;
 };
 
 LIST_HEAD(aui_window_list, aui_window);
@@ -62,11 +67,6 @@ struct aui_window {
     struct aui_container con;
     const char *title;
     int draw_flag;
-
-    struct window_focus {
-        struct aui_widget *press;
-        struct aui_widget *hover;
-    } focus;
 
     LIST_ENTRY(aui_window) entries;
 };

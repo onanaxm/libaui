@@ -11,7 +11,7 @@ SRCS=		button.c \
 			xcb.c \
 			widget.c \
 			window.c
-CFLAGS+=	-fPIC -O0 -std=c99
+CFLAGS+=	-fPIC -O0 -std=c99 -Werror
 OBJS=		${SRCS:.c=.o}
 INCS=		-I /usr/X11R6/include
 HDR=		aui.h
@@ -27,7 +27,7 @@ ${LIB}: ${OBJS}
 	ar rc ${PREFIX}/lib/${LIB}.a ${OBJS}
 
 .c.o:
-	${CC} -c -fPIC $< -o $@ ${INCS}
+	${CC} -c -fPIC $< -o $@ ${INCS} ${CFLAGS}
 
 clean:
 	rm -rf ${PREFIX}/lib/${LIB}.so ${PREFIX}/include/${HDR} ${PREFIX}/lib/${LIB}.a ${OBJS}

@@ -8,4 +8,6 @@ enum aui_layout_type {
     AUI_LAYOUT_PACK
 };
 
+void layout_organize(struct aui_widget *widget);
+
 #endif

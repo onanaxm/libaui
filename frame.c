@@ -49,25 +49,65 @@ aui_frame_new(struct aui_widget *parent)
 static void
 frame_mouse_hover(struct aui_widget *widget, uint16_t x, uint16_t y)
 {
+    struct aui_container *con = (struct aui_container *)widget;
+    struct aui_widget *tohover = NULL;
+    struct aui_widget *child;
 
+    TAILQ_FOREACH(child, &widget->queue, entries) {
+        if (child->mapped && widget_collides_with_point(child, x, y))
+            tohover = child;
+    }
+
+    if (tohover != con->focus.hover && con->focus.hover != NULL)
+        con->focus.hover->in_ops->mouse_unhover(con->focus.hover);
+
+    con->focus.hover = tohover;
+
+    if (tohover != NULL)
+        tohover->in_ops->mouse_hover(tohover, x, y);
 }
 
 static void
 frame_mouse_unhover(struct aui_widget *widget)
 {
+    struct aui_container *con = (struct aui_container *)widget;
 
+    if (con->focus.hover) {
+        con->focus.hover->in_ops->mouse_unhover(con->focus.hover);
+        con->focus.hover = NULL;
+    }
 }
 
 static void
 frame_mouse_press(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t button)
 {
+    struct aui_container *con = (struct aui_container *)widget;
+    struct aui_widget *topress = NULL;
+    struct aui_widget *child;
 
+    TAILQ_FOREACH(child, &widget->queue, entries) {
+        if (child->mapped && widget_collides_with_point(child, x, y))
+            topress = child;
+    }
+
+    if (topress != con->focus.press && con->focus.press != NULL)
+        con->focus.press->in_ops->mouse_release(con->focus.press, x, y, button);
+
+    con->focus.press = topress;
+
+    if (topress != NULL)
+        topress->in_ops->mouse_press(topress, x, y, button);
 }
 
 static void
 frame_mouse_release(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t button)
 {
+    struct aui_container *con = (struct aui_container *)widget;
 
+    if (con->focus.press != NULL) {
+        con->focus.press->in_ops->mouse_release(con->focus.press, x, y, button);
+        con->focus.press = NULL;
+    }
 }
 
 static void

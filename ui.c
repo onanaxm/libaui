@@ -5,6 +5,7 @@
 #include "event.h"
 #include "driver.h"
 #include "widget.h"
+#include "layout.h"
 #include "aui_priv.h"
 
 struct aui_event_queue ev_queue;
@@ -93,6 +94,8 @@ aui_run(void)
 
                 driver->ops->resize_window(aw);
                 free((void *)rze);
+
+                layout_organize((struct aui_widget *)aw);
                 break;
             }
             case AUI_EVENT_MOUSE_MOTION: {
