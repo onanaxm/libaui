@@ -1,9 +1,9 @@
-.Dd $Mdocdate: May 27 2026$
+.Dd $Mdocdate: June 02 2026$
 .Dt AUI_RUN 3
 .Os
 .Sh NAME
 .Nm aui_run ,
-.Nm aui_free ,
+.Nm aui_destroy ,
 .Nm aui_window_new ,
 .Nm aui_button_new ,
 .Nm aui_place ,
@@ -17,7 +17,7 @@
 .Ft void
 .Fn aui_run "void"
 .Ft void
-.Fn aui_free "struct aui_widget *"
+.Fn aui_destroy "struct aui_widget *"
 .Ft struct aui_window*
 .Fn aui_window_new "void"
 .Ft struct aui_button*

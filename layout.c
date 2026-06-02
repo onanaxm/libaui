@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "aui.h"
 #include "widget.h"
+
+struct rcinfo {
+    unsigned int range[2];
+};
 
 static int
 can_add(struct aui_widget *widget, enum aui_layout_type type)
@@ -23,6 +28,12 @@ can_add(struct aui_widget *widget, enum aui_layout_type type)
     }
 
     return 0;
+}
+
+int
+cmp_grid(struct aui_widget *a, struct aui_widget *b)
+{
+    return a->gridpar.column < b->gridpar.column ? -1 : a->gridpar.column > b->gridpar.column;
 }
 
 void
@@ -100,6 +111,59 @@ layout_organize(struct aui_widget *widget)
             }
         }
         break;
+    case AUI_LAYOUT_GRID: {
+        unsigned int cell_size[2] = { 50, 50 };
+        unsigned int *added = calloc(con->grid_size[0], sizeof(unsigned int));
+        unsigned int *radded = calloc(con->grid_size[1], sizeof(unsigned int));
+
+        TAILQ_FOREACH(child, &widget->queue, entries) {
+            if (child->mapped == 0)
+                continue;
+
+            struct aui_geometry geom = { 0 };
+            struct aui_widget *sub;
+
+            geom.x = widget->geom.x;
+            geom.y = widget->geom.y;
+
+            memset(added, 0, sizeof(unsigned int) * con->grid_size[0]);
+            memset(radded, 0, sizeof(unsigned int) * con->grid_size[1]);
+
+            TAILQ_FOREACH(sub, &widget->queue, entries) {
+                if (sub->mapped == 0 || sub == child)
+                    continue;
+
+                if (sub->gridpar.column < child->gridpar.column && added[sub->gridpar.column] == 0) {
+                    added[sub->gridpar.column] = 1;
+                    geom.x += cell_size[0];
+                }
+
+                if (sub->gridpar.row < child->gridpar.row && radded[sub->gridpar.row] == 0) {
+                    radded[sub->gridpar.row] = 1;
+                    geom.y += cell_size[1];
+                }
+            }
+
+            geom.width = cell_size[0];
+            geom.height = cell_size[1];
+
+            child->in_ops->set_geometry(child, &geom);
+        }
+
+        free(added);
+        free(radded);
+
+        TAILQ_FOREACH(child, &widget->queue, entries) {
+            switch (child->type) {
+            case WIDGET_TYPE_FRAME:
+                layout_organize(child);
+                break;
+            default:
+                break;
+            }
+        }
+        break;
+    }
     default:
         break;
     }
@@ -141,9 +205,22 @@ int
 aui_grid(struct aui_widget *widget, struct aui_gridpar *par)
 {
     int check = can_add(widget, AUI_LAYOUT_GRID);
+    struct aui_widget *parent;
+    struct aui_container *con;
 
     if (check == -1)
         return -1;
+
+    con = (struct aui_container *)widget->parent;
+    parent = widget->parent;
+    con->layout_type = AUI_LAYOUT_GRID;
+    widget->gridpar = *(par);
+    widget->mapped = 1;
+
+    con->grid_size[0] = (con->grid_size[0] > par->column + 1) ? con->grid_size[0] : par->column + 1;
+    con->grid_size[1] = (con->grid_size[1] > par->row + 1) ? con->grid_size[1] : par->row + 1;
+
+    layout_organize(parent);
 
     return 0;
 }
@@ -152,5 +229,12 @@ int
 aui_getplacepar(struct aui_widget *widget, struct aui_placepar *par)
 {
     *par = widget->placepar;
+    return 0;
+}
+
+int
+aui_getgridpar(struct aui_widget *widget, struct aui_gridpar *par)
+{
+    *par = widget->gridpar;
     return 0;
 }

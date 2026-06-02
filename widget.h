@@ -5,6 +5,9 @@
 
 #include "layout.h"
 
+/*
+ * Gives screen position
+ */
 struct aui_geometry {
     int x, y;
     uint16_t width;
@@ -55,6 +58,7 @@ struct aui_container {
     struct aui_widget widget;
     unsigned int map_count;
     enum aui_layout_type layout_type;
+    uint32_t grid_size[2];
 
     struct container_focus {
         struct aui_widget *press;

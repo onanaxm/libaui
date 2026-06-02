@@ -1,7 +1,7 @@
 #ifndef __AUI_H__
 #define __AUI_H__
 
-#define AUI_WIDGET(widget) (struct aui_widget *) widget
+#define AUI_WIDGET(widget) ((struct aui_widget *) widget)
 
 struct aui_color {
     unsigned char red;
@@ -35,8 +35,17 @@ struct aui_packpar {
 };
 
 struct aui_gridpar {
-    unsigned int row;
     unsigned int column;
+    unsigned int columnspan;
+    int padx[2];
+    int pady[2];
+    unsigned int row;
+    unsigned int rowspan;
+#define AUI_STICKY_N    (1 << 0)
+#define AUI_STICKY_W    (1 << 1)
+#define AUI_STICKY_S    (1 << 2)
+#define AUI_STICKY_E    (1 << 3)
+    unsigned char sticky;
 };
 
 struct aui_widget;
@@ -46,7 +55,7 @@ struct aui_canvas;      /* rendering free of rules */
 struct aui_button;
 
 void aui_run(void);
-void aui_free(struct aui_widget *);
+void aui_destroy(struct aui_widget *);
 struct aui_window *aui_window_new(void);
 struct aui_button *aui_button_new(struct aui_widget *);
 struct aui_frame *aui_frame_new(struct aui_widget *);
