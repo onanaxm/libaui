@@ -5,10 +5,6 @@
 #include "aui.h"
 #include "widget.h"
 
-struct rcinfo {
-    unsigned int range[2];
-};
-
 static int
 can_add(struct aui_widget *widget, enum aui_layout_type type)
 {
@@ -28,12 +24,6 @@ can_add(struct aui_widget *widget, enum aui_layout_type type)
     }
 
     return 0;
-}
-
-int
-cmp_grid(struct aui_widget *a, struct aui_widget *b)
-{
-    return a->gridpar.column < b->gridpar.column ? -1 : a->gridpar.column > b->gridpar.column;
 }
 
 void
@@ -101,6 +91,7 @@ layout_organize(struct aui_widget *widget)
             geom.x += dx;
             geom.y += dy;
             child->in_ops->set_geometry(child, &geom); 
+            con->map_count++;
 
             switch (child->type) {
             case WIDGET_TYPE_FRAME:
@@ -153,6 +144,35 @@ layout_organize(struct aui_widget *widget)
         free(added);
         free(radded);
 
+        con->map_count++;
+
+        TAILQ_FOREACH(child, &widget->queue, entries) {
+            switch (child->type) {
+            case WIDGET_TYPE_FRAME:
+                layout_organize(child);
+                break;
+            default:
+                break;
+            }
+        }
+        break;
+    }
+    case AUI_LAYOUT_PACK: {
+        unsigned int cell_size[] = { 50, 50 };
+        struct aui_geometry geom = { 0 };
+        struct aui_placepar *par = NULL;
+        int dx = 0, dy = 0;
+
+        TAILQ_FOREACH(child, &widget->queue, entries) {
+            geom.height = cell_size[1];
+            geom.width = cell_size[0];
+            geom.y = dy;
+            geom.x = widget->geom.x + widget->geom.width/2 - geom.width / 2;
+
+            dy += geom.height;
+            child->in_ops->set_geometry(child, &geom);
+        }
+
         TAILQ_FOREACH(child, &widget->queue, entries) {
             switch (child->type) {
             case WIDGET_TYPE_FRAME:
@@ -194,9 +214,19 @@ int
 aui_pack(struct aui_widget *widget, struct aui_packpar *par)
 {
     int check = can_add(widget, AUI_LAYOUT_PACK);
+    struct aui_widget *parent;
+    struct aui_container *con;
 
     if (check == -1)
         return - 1;
+
+    con = (struct aui_container *)widget->parent;
+    parent = widget->parent;
+    con->layout_type = AUI_LAYOUT_PACK;
+    widget->packpar = *(par);
+    widget->mapped = 1;
+
+    layout_organize(parent);
 
     return 0;
 }

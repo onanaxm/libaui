@@ -40,8 +40,6 @@ aui_button_new(struct aui_widget *parent)
 	/*
 	 * Creating the rectangle primitive
 	 */
-
-	printf("libaui: button created!\n");
     widget_add(parent, widget);
 
     widget->primitives.count = 2;

@@ -150,7 +150,7 @@ aui_run(void)
 }
 
 void
-aui_free(struct aui_widget *widget)
+aui_destroy(struct aui_widget *widget)
 {
     widget->in_ops->free(widget);
 }

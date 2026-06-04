@@ -6,6 +6,7 @@ SRCS=		button.c \
 			canvas.c \
 			driver.c \
 			frame.c \
+			font.c \
 			layout.c \
 			ui.c \
 			xcb.c \
@@ -13,7 +14,7 @@ SRCS=		button.c \
 			window.c
 CFLAGS+=	-fPIC -O0 -std=c99 -Werror
 OBJS=		${SRCS:.c=.o}
-INCS=		-I /usr/X11R6/include
+INCS=		-I /usr/X11R6/include -I /usr/X11R6/include/freetype2
 HDR=		aui.h
 LDADD=		-L /usr/X11R6/lib -lxcb -lxcb-render -lfontconfig -lfreetype
 

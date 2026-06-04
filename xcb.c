@@ -6,6 +6,7 @@
 #include <xcb/xcb.h>
 #include <xcb/render.h>
 
+#include "font.h"
 #include "event.h"
 #include "driver.h"
 #include "widget.h"
@@ -89,6 +90,7 @@ xcb_driver_open(void)
     /* Setting up the driver */
     axcb->adr.ops = &aui_dri_ops;
     driver = &axcb->adr;
+    font_init();
 
     return config_xcb(axcb);
 }
@@ -276,7 +278,7 @@ aui_dri_resize_window(struct aui_window *aw)
 static void 
 aui_dri_render_background(struct aui_window *aw)
 {
-    xcb_render_color_t color = { .red = 0xcbcb, .green = 0xcbcb, .blue = 0xcbcb, .alpha = 0xffff };
+    xcb_render_color_t color = { .red = 0xd9d9, .green = 0xd9d9, .blue = 0xd9d9, .alpha = 0xffff };
     struct aui_widget *ww = (struct aui_widget *)aw;
     xcb_rectangle_t rects[] = { { .x = 0, .y = 0, .width = ww->geom.width, 
         .height = ww->geom.height } };

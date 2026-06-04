@@ -31,7 +31,20 @@ struct aui_placepar {
 };
 
 struct aui_packpar {
-    const char *side;
+    unsigned char anchor;
+    unsigned char expand;
+#define AUI_FILL_NONE       0
+#define AUI_FILL_X          1
+#define AUI_FILL_Y          2
+#define AUI_FILL_BOTH       3
+    unsigned char fill;
+    int padx[2];
+    int pady[2];
+#define AUI_SIDE_TOP        1
+#define AUI_SIDE_RIGHT      2
+#define AUI_SIDE_LEFT       3
+#define AUI_SIDE_BOTTOM     4
+    unsigned char side;
 };
 
 struct aui_gridpar {
