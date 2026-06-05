@@ -25,6 +25,8 @@ struct dri_ops {
     void (*render_rectangle) (struct aui_window *, struct primitive *);
     void (*set_rectangle_color) (struct aui_window *, struct primitive *, struct aui_color *);
     void (*set_rectangle_geometry) (struct aui_window *, struct primitive *, struct aui_geometry *);
+
+    void (*draw_text)(struct aui_window *, const char *, int, int);
 };
 
 extern struct aui_dri *driver; /* Associated with xcb backend */

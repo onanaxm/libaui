@@ -23,6 +23,8 @@ struct aui_dri_xcb {
     xcb_intern_atom_reply_t *wm_protocols;
     xcb_intern_atom_reply_t *wm_delete_window;
 
+    xcb_render_glyphset_t glyphset;
+    xcb_render_picture_t glyphpic;
     xcb_render_pictformat_t fmt_normal;
     xcb_render_pictformat_t fmt_alpha8;
     xcb_render_pictformat_t fmt_argb32;
@@ -53,6 +55,8 @@ static void aui_dri_set_rectangle_color(struct aui_window *, struct primitive *,
 static void aui_dri_set_rectangle_geometry(struct aui_window *, struct primitive *, 
     struct aui_geometry *);
 
+static void aui_dri_draw_text(struct aui_window *, const char *, int, int);
+
 static struct dri_ops aui_dri_ops = {
     aui_dri_create_window,
     aui_dri_delete_window,
@@ -66,6 +70,8 @@ static struct dri_ops aui_dri_ops = {
     aui_dri_render_rectangle,
     aui_dri_set_rectangle_color,
     aui_dri_set_rectangle_geometry,
+
+    aui_dri_draw_text,
 };
 
 struct rectangle {
@@ -81,18 +87,66 @@ static struct aui_window_xcb *find_window_xcb(xcb_window_t);
 int
 xcb_driver_open(void)
 {
-    struct aui_dri_xcb *axcb;
+    struct aui_dri_xcb *dri_xcb;
 
-    axcb = malloc(sizeof(struct aui_dri_xcb));
-    if (axcb == NULL)
+    dri_xcb = malloc(sizeof(struct aui_dri_xcb));
+    if (dri_xcb == NULL)
         return -1;
 
     /* Setting up the driver */
-    axcb->adr.ops = &aui_dri_ops;
-    driver = &axcb->adr;
-    font_init();
+    dri_xcb->adr.ops = &aui_dri_ops;
+    driver = &dri_xcb->adr;
 
-    return config_xcb(axcb);
+    if (config_xcb(dri_xcb) == -1)
+        return -1;
+
+    /*
+     * Loading fonts
+     */
+    font_init();
+    unsigned int en_range[] = { 32, 127 };
+    unsigned int en_dt = en_range[1] - en_range[0];
+    struct glyph *en_glyphs = calloc(en_dt, sizeof(struct glyph));
+
+    for (int i = en_range[0]; i < en_range[1]; i++) 
+        en_glyphs[i - en_range[0]].charcode = i;
+    font_load_glyphs(en_glyphs, en_dt);
+
+    dri_xcb->glyphset = xcb_generate_id(dri_xcb->conn);
+    xcb_render_create_glyph_set(dri_xcb->conn, dri_xcb->glyphset, dri_xcb->fmt_alpha8);
+
+    for (int i = 0; i < en_dt; i++) {
+        uint32_t glyphid = en_range[0] + i;
+        struct glyph *g = &en_glyphs[i];
+        xcb_render_glyphinfo_t ginfo = {
+            .width = g->width,
+            .height = g->height,
+            .x = g->x,
+            .y = g->y,
+            .x_off = g->x_offset,
+            .y_off = g->y_offset,
+        };
+
+        xcb_render_add_glyphs(
+            dri_xcb->conn,
+            dri_xcb->glyphset,
+            1,
+            &glyphid,
+            &ginfo,
+            g->stride * g->height,
+            g->bitmap
+        );
+
+        free(g->bitmap);
+    }
+
+    free(en_glyphs);
+
+    dri_xcb->glyphpic = xcb_generate_id(dri_xcb->conn);
+    xcb_render_color_t color = { 0, 0, 0xffff, 0xffff };
+    xcb_render_create_solid_fill(dri_xcb->conn, dri_xcb->glyphpic, color);
+
+    return 0;
 }
 
 static struct aui_window
@@ -385,6 +439,62 @@ void aui_dri_set_rectangle_geometry(struct aui_window *aw, struct primitive *pri
     rect->xrect.y = geom->y;
     rect->xrect.width = geom->width;
     rect->xrect.height = geom->height;
+}
+
+/*
+ * This renders text without the use of xcb_render utils. It utilises the
+ * xcb_render_composite_glyphs_8 function which expects an 8 bytes header
+ * where. Can only be up to 255 characters:
+ *
+ * byte0=>     len
+ * byte1-3=>   padding
+ * byte4-5=>   dx
+ * byte6-7=>   dy
+ */
+struct ghead {
+    uint8_t       len;
+    uint8_t       pad[3];
+    int16_t       dx;
+    int16_t       dy;
+};
+
+static void 
+aui_dri_draw_text(struct aui_window *aw, const char *text, int x, int y)
+{
+    struct aui_window_xcb *aw_xcb = (struct aui_window_xcb *)aw;
+    struct aui_dri_xcb *dri_xcb = (struct aui_dri_xcb *)driver;
+
+    size_t len = strlen(text);
+    struct ghead cmd = { .len = len, .dx = x, .dy = y };
+
+    size_t cmd_len = len + 8;
+    uint8_t *glyphcmds = malloc(cmd_len);
+
+    if (glyphcmds == NULL)
+        return;
+
+    glyphcmds[0] = cmd.len;
+    glyphcmds[1] = 0;
+    glyphcmds[2] = 0;
+    glyphcmds[3] = 0;
+
+    memcpy(&glyphcmds[4], &cmd.dx, 2);
+    memcpy(&glyphcmds[6], &cmd.dy, 2);
+
+    memcpy(glyphcmds + 8, text, len);
+
+    xcb_render_composite_glyphs_8(
+        dri_xcb->conn,
+        XCB_RENDER_PICT_OP_OVER,
+        dri_xcb->glyphpic,
+        aw_xcb->src_pict,
+        0,
+        dri_xcb->glyphset,
+        0, 0,
+        cmd_len,
+        glyphcmds);
+
+    free(glyphcmds);
 }
 
 /*
