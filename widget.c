@@ -46,6 +46,9 @@ widget_draw(struct aui_widget *widget)
         case PRIMITIVE_TYPE_RECTANGLE:
             driver->ops->render_rectangle(widget->window, prim);
             break;
+        case PRIMITIVE_TYPE_TEXT:
+            driver->ops->render_text(widget->window, prim);
+            break;
         default:
             break;
         }

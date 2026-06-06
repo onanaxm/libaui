@@ -25,6 +25,8 @@ struct aui_dri_xcb {
 
     xcb_render_glyphset_t glyphset;
     xcb_render_picture_t glyphpic;
+    struct glyph *glyphs;
+    unsigned int font_height;
     xcb_render_pictformat_t fmt_normal;
     xcb_render_pictformat_t fmt_alpha8;
     xcb_render_pictformat_t fmt_argb32;
@@ -55,7 +57,10 @@ static void aui_dri_set_rectangle_color(struct aui_window *, struct primitive *,
 static void aui_dri_set_rectangle_geometry(struct aui_window *, struct primitive *, 
     struct aui_geometry *);
 
-static void aui_dri_draw_text(struct aui_window *, const char *, int, int);
+static struct primitive *aui_dri_create_text(void);
+static void aui_dri_set_text(struct primitive *, const char *, int16_t, int16_t);
+static void aui_dri_render_text(struct aui_window *, struct primitive *);
+static struct aui_geometry aui_dri_get_text_geometry(struct primitive *);
 
 static struct dri_ops aui_dri_ops = {
     aui_dri_create_window,
@@ -71,13 +76,22 @@ static struct dri_ops aui_dri_ops = {
     aui_dri_set_rectangle_color,
     aui_dri_set_rectangle_geometry,
 
-    aui_dri_draw_text,
+    aui_dri_create_text,
+    aui_dri_set_text,
+    aui_dri_render_text,
+    aui_dri_get_text_geometry
 };
 
 struct rectangle {
     struct primitive base;
     xcb_rectangle_t xrect;
     xcb_render_color_t xcolor;
+};
+
+struct text {
+    struct primitive base;
+    const char *data; /* Not allocated, pointer to string literal */
+    int16_t x, y;
 };
 
 static int config_xcb(struct aui_dri_xcb*);
@@ -100,24 +114,20 @@ xcb_driver_open(void)
     if (config_xcb(dri_xcb) == -1)
         return -1;
 
-    /*
-     * Loading fonts
-     */
-    font_init();
-    unsigned int en_range[] = { 32, 127 };
-    unsigned int en_dt = en_range[1] - en_range[0];
-    struct glyph *en_glyphs = calloc(en_dt, sizeof(struct glyph));
 
-    for (int i = en_range[0]; i < en_range[1]; i++) 
-        en_glyphs[i - en_range[0]].charcode = i;
-    font_load_glyphs(en_glyphs, en_dt);
+    dri_xcb->font_height = 0;
+    dri_xcb->glyphs = calloc(126, sizeof(struct glyph));
+    for (int i = 32; i < 127; i++) dri_xcb->glyphs[i].charcode = i;
+
+    font_init();
+    font_load_glyphs(dri_xcb->glyphs + 32, 127 - 32);
 
     dri_xcb->glyphset = xcb_generate_id(dri_xcb->conn);
     xcb_render_create_glyph_set(dri_xcb->conn, dri_xcb->glyphset, dri_xcb->fmt_alpha8);
 
-    for (int i = 0; i < en_dt; i++) {
-        uint32_t glyphid = en_range[0] + i;
-        struct glyph *g = &en_glyphs[i];
+    for (int i = 0; i < (127 - 32); i++) {
+        uint32_t glyphid = 32 + i;
+        struct glyph *g = &dri_xcb->glyphs[i + 32];
         xcb_render_glyphinfo_t ginfo = {
             .width = g->width,
             .height = g->height,
@@ -137,13 +147,11 @@ xcb_driver_open(void)
             g->bitmap
         );
 
-        free(g->bitmap);
+        dri_xcb->font_height = (dri_xcb->font_height < g->height) ? g->height : dri_xcb->font_height;
     }
 
-    free(en_glyphs);
-
     dri_xcb->glyphpic = xcb_generate_id(dri_xcb->conn);
-    xcb_render_color_t color = { 0, 0, 0xffff, 0xffff };
+    xcb_render_color_t color = { 0xffff/2, 0xffff/2, 0, 0xffff };
     xcb_render_create_solid_fill(dri_xcb->conn, dri_xcb->glyphpic, color);
 
     return 0;
@@ -441,6 +449,23 @@ void aui_dri_set_rectangle_geometry(struct aui_window *aw, struct primitive *pri
     rect->xrect.height = geom->height;
 }
 
+static struct primitive*
+aui_dri_create_text()
+{
+    struct text *t = calloc(1, sizeof(struct text));
+    return &(t)->base;
+}
+
+static void
+aui_dri_set_text(struct primitive *p, const char *data, int16_t x, int16_t y)
+{
+    struct text *t = (struct text *)p;
+    t->base.type = PRIMITIVE_TYPE_TEXT;
+    t->data = data;
+    t->x = x;
+    t->y = y;
+}
+
 /*
  * This renders text without the use of xcb_render utils. It utilises the
  * xcb_render_composite_glyphs_8 function which expects an 8 bytes header
@@ -459,13 +484,14 @@ struct ghead {
 };
 
 static void 
-aui_dri_draw_text(struct aui_window *aw, const char *text, int x, int y)
+aui_dri_render_text(struct aui_window *aw, struct primitive *p)
 {
     struct aui_window_xcb *aw_xcb = (struct aui_window_xcb *)aw;
     struct aui_dri_xcb *dri_xcb = (struct aui_dri_xcb *)driver;
+    struct text *t = (struct text *)p;
 
-    size_t len = strlen(text);
-    struct ghead cmd = { .len = len, .dx = x, .dy = y };
+    size_t len = (t->data == NULL) ? 0 : strlen(t->data);
+    struct ghead cmd = { .len = len, .dx = t->x, .dy = t->y };
 
     size_t cmd_len = len + 8;
     uint8_t *glyphcmds = malloc(cmd_len);
@@ -481,7 +507,7 @@ aui_dri_draw_text(struct aui_window *aw, const char *text, int x, int y)
     memcpy(&glyphcmds[4], &cmd.dx, 2);
     memcpy(&glyphcmds[6], &cmd.dy, 2);
 
-    memcpy(glyphcmds + 8, text, len);
+    memcpy(glyphcmds + 8, t->data, len);
 
     xcb_render_composite_glyphs_8(
         dri_xcb->conn,
@@ -495,6 +521,30 @@ aui_dri_draw_text(struct aui_window *aw, const char *text, int x, int y)
         glyphcmds);
 
     free(glyphcmds);
+}
+
+static struct aui_geometry
+aui_dri_get_text_geometry(struct primitive *p)
+{
+    struct aui_dri_xcb *dri_xcb = (struct aui_dri_xcb *)driver;
+    struct aui_geometry geom = { 0 };
+    struct text *t = (struct text *)p;
+    size_t len = (t->data == NULL) ? 0 : strlen(t->data);
+
+    for (int i = 0; i < len; i++) {
+        uint32_t glyphid = (uint32_t)t->data[i];
+        if (glyphid < 32 || glyphid > 126) {
+            fprintf(stderr, "libaui: unknown geometry for glyph id: %d\n", glyphid);
+            continue;
+        }
+
+        struct glyph *g = &dri_xcb->glyphs[glyphid];
+
+        geom.width += g->width;
+    }
+    geom.height = dri_xcb->font_height;
+
+    return geom;
 }
 
 /*

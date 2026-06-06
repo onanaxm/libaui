@@ -19,19 +19,19 @@
 .Ft void
 .Fn aui_destroy "struct aui_widget *"
 .Ft struct aui_window*
-.Fn aui_window_new "void"
+.Fn aui_window_new "struct aui_windowconfig * config"
 .Ft struct aui_button*
-.Fn aui_button_new "struct aui_widget * parent"
+.Fn aui_button_new "struct aui_widget * parent" "struct aui_buttonconfig * config"
 .Ft struct aui_frame*
 .Fn aui_frame_new "struct aui_widget * parent"
 .Ft struct aui_canvas*
 .Fn aui_canvas_new "struct aui_widget * parent"
 .Ft int
-.Fn aui_place "struct aui_widget * widget" "struct aui_placepar *"
+.Fn aui_place "struct aui_widget * widget" "struct aui_placepar * par"
 .Ft int
-.Fn aui_grid "struct aui_widget * widget" "struct aui_gridpar *"
+.Fn aui_grid "struct aui_widget * widget" "struct aui_gridpar * par"
 .Ft int
-.Fn aui_pack "struct aui_widget * widget" "struct aui_packpar *"
+.Fn aui_pack "struct aui_widget * widget" "struct aui_packpar * par"
 .Ft int
 .Fn aui_getplacepar "struct aui_widget * widget"
 .Ft int
@@ -51,7 +51,7 @@ Canvases are also containers although they cannot take widgets as childrens.
 int
 main(void)
 {
-    struct aui_window *aw = aui_window_new();
+    struct aui_window *aw = aui_window_new(NULL);
 
     aui_run();
 

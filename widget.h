@@ -71,6 +71,7 @@ struct aui_window {
     struct aui_container con;
     const char *title;
     int draw_flag;
+    struct aui_windowconfig config;
 
     LIST_ENTRY(aui_window) entries;
 };
@@ -86,6 +87,7 @@ struct aui_canvas {
 struct aui_button {
 	struct aui_widget widget;
     unsigned int pressed;
+    struct aui_buttonconfig config;
 };
 
 extern struct aui_window_list wlist;

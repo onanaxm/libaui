@@ -71,10 +71,7 @@ font_load_glyphs(struct glyph *gptr, unsigned int dt)
 
         for (int y = 0; y < g->height; y++)
             memcpy(g->bitmap + y * g->stride, bmp.buffer + y * g->width, g->width);
-
-        printf("%c ", g->charcode);
     }
-    printf("\n");
 
     FT_Done_Face(face);
     return 0;

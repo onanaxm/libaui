@@ -24,8 +24,14 @@ static struct widget_ops window_ops = {
     window_free,
 };
 
+static struct aui_windowconfig default_config = {
+    .width =    200,
+    .height =   200,
+    .title =   "aui",
+};
+
 struct aui_window*
-aui_window_new(void)
+aui_window_new(struct aui_windowconfig *config)
 {
     if (driver == NULL) {
         if (driver_open(DRIVER_TYPE_X11) == -1) {

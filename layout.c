@@ -263,6 +263,13 @@ aui_getplacepar(struct aui_widget *widget, struct aui_placepar *par)
 }
 
 int
+aui_getpackpar(struct aui_widget *widget, struct aui_packpar *par)
+{
+    *par = widget->packpar;
+    return 0;
+}
+
+int
 aui_getgridpar(struct aui_widget *widget, struct aui_gridpar *par)
 {
     *par = widget->gridpar;

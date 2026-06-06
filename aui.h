@@ -67,10 +67,20 @@ struct aui_frame;
 struct aui_canvas;      /* rendering free of rules */
 struct aui_button;
 
+struct aui_windowconfig {
+    unsigned int width;
+    unsigned int height;
+    const char *title; /* Should not be allocated, string literal */
+};
+
+struct aui_buttonconfig {
+    const char *text; /* Should not be allocated, string literal */
+};
+
 void aui_run(void);
 void aui_destroy(struct aui_widget *);
-struct aui_window *aui_window_new(void);
-struct aui_button *aui_button_new(struct aui_widget *);
+struct aui_window *aui_window_new(struct aui_windowconfig *);
+struct aui_button *aui_button_new(struct aui_widget *, struct aui_buttonconfig *);
 struct aui_frame *aui_frame_new(struct aui_widget *);
 struct aui_canvas *aui_canvas_new(struct aui_widget *);
 int aui_place(struct aui_widget *, struct aui_placepar *);
