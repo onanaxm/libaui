@@ -12,7 +12,7 @@ SRCS=		button.c \
 			xcb.c \
 			widget.c \
 			window.c
-CFLAGS+=	-fPIC -O0 -std=c99 -Werror
+CFLAGS=		-fPIC -O0 -std=c99 -Werror
 OBJS=		${SRCS:.c=.o}
 INCS=		-I /usr/X11R6/include -I /usr/X11R6/include/freetype2
 HDR=		aui.h

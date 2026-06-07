@@ -26,7 +26,7 @@ struct aui_dri_xcb {
     xcb_render_glyphset_t glyphset;
     xcb_render_picture_t glyphpic;
     struct glyph *glyphs;
-    unsigned int font_height;
+    int font_height;
     xcb_render_pictformat_t fmt_normal;
     xcb_render_pictformat_t fmt_alpha8;
     xcb_render_pictformat_t fmt_argb32;
@@ -134,7 +134,7 @@ xcb_driver_open(void)
             .x = g->x,
             .y = g->y,
             .x_off = g->x_offset,
-            .y_off = g->y_offset,
+            .y_off = 0, /* We are only rendering horizontaly. This is unecessary */
         };
 
         xcb_render_add_glyphs(
@@ -147,7 +147,8 @@ xcb_driver_open(void)
             g->bitmap
         );
 
-        dri_xcb->font_height = (dri_xcb->font_height < g->height) ? g->height : dri_xcb->font_height;
+        if (dri_xcb->font_height < g->y_offset)
+            dri_xcb->font_height = g->y_offset;
     }
 
     dri_xcb->glyphpic = xcb_generate_id(dri_xcb->conn);
@@ -539,8 +540,7 @@ aui_dri_get_text_geometry(struct primitive *p)
         }
 
         struct glyph *g = &dri_xcb->glyphs[glyphid];
-
-        geom.width += g->width;
+        geom.width += g->x_offset;
     }
     geom.height = dri_xcb->font_height;
 

@@ -24,8 +24,8 @@ font_init()
         return -1;
     }
 
-    font.base = find_font_fc("sans-serif");
     font.size = 12;
+    font.base = find_font_fc("sans-serif");
 
     if (FT_Init_FreeType(&font.ft_library) != 0) {
         fprintf(stderr, "libaui: FT_Init_FreeType failed!\n");
@@ -60,12 +60,13 @@ font_load_glyphs(struct glyph *gptr, unsigned int dt)
         }
 
         FT_Bitmap bmp = face->glyph->bitmap;
+
         g->x = -face->glyph->bitmap_left;
         g->y =  face->glyph->bitmap_top;
         g->height = bmp.rows;
         g->width = bmp.width;
-        g->x_offset = face->glyph->advance.x/64;
-        g->y_offset = face->glyph->advance.y/64;
+        g->x_offset = face->glyph->advance.x >> 6; /* 26.6 format to pixels */
+        g->y_offset = face->glyph->metrics.horiBearingY >> 6;
         g->stride = (g->width + 3) &~3;
         g->bitmap = calloc(g->stride * g->height, sizeof(*g->bitmap));
 

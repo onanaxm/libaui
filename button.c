@@ -118,7 +118,7 @@ button_set_geometry(struct aui_widget *widget, struct aui_geometry *geom)
                                   .height = geom->height - 2 };
     struct aui_geometry tgeom = driver->ops->get_text_geometry(widget->primitives.list[2]);
     int tx = geom->x + geom->width / 2 - tgeom.width / 2;
-    int ty = geom->y + geom->height / 2 - tgeom.height / 2;
+    int ty = geom->y + geom->height / 2 + tgeom.height / 2;
 
     memcpy(&widget->geom, geom, sizeof(struct aui_geometry));
     driver->ops->set_rectangle_geometry(widget->window, widget->primitives.list[0], geom);
