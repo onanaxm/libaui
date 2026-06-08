@@ -50,7 +50,6 @@ aui_window_new(struct aui_windowconfig *config)
 
     widget->in_ops = &window_ops;
     widget->mapped = 1;
-    aw->con.map_count = 0;
 
 	widget->window = aw;
     aw->draw_flag = 1;

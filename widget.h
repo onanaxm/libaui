@@ -52,11 +52,11 @@ struct widget_ops {
     void (*mouse_release) (struct aui_widget *, uint16_t, uint16_t, uint8_t);
     void (*set_geometry) (struct aui_widget *, struct aui_geometry *);
     void (*free) (struct aui_widget *);
+    struct aui_geometry (*get_min_size) (struct aui_widget *);
 };
 
 struct aui_container {
     struct aui_widget widget;
-    unsigned int map_count;
     enum aui_layout_type layout_type;
     uint32_t grid_size[2];
 

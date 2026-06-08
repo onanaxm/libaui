@@ -11,6 +11,7 @@ static void frame_mouse_press(struct aui_widget *, uint16_t, uint16_t, uint8_t);
 static void frame_mouse_release(struct aui_widget *, uint16_t, uint16_t, uint8_t);
 static void frame_set_geometry(struct aui_widget *, struct aui_geometry *);
 static void frame_free(struct aui_widget *);
+static struct aui_geometry frame_get_min_size(struct aui_widget *);
 
 static struct widget_ops frame_ops = {
     frame_mouse_hover,
@@ -19,6 +20,7 @@ static struct widget_ops frame_ops = {
     frame_mouse_release,
     frame_set_geometry,
     frame_free,
+    frame_get_min_size,
 };
 
 struct aui_color colors[] = {
@@ -121,4 +123,10 @@ static void
 frame_free(struct aui_widget *widget)
 {
 
+}
+
+static struct aui_geometry frame_get_min_size(struct aui_widget *widget)
+{
+    struct aui_geometry geom = { 0, 0, 120, 120 };
+    return geom;
 }

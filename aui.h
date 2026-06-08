@@ -49,16 +49,7 @@ struct aui_packpar {
 
 struct aui_gridpar {
     unsigned int column;
-    unsigned int columnspan;
-    int padx[2];
-    int pady[2];
     unsigned int row;
-    unsigned int rowspan;
-#define AUI_STICKY_N    (1 << 0)
-#define AUI_STICKY_W    (1 << 1)
-#define AUI_STICKY_S    (1 << 2)
-#define AUI_STICKY_E    (1 << 3)
-    unsigned char sticky;
 };
 
 struct aui_widget;
@@ -75,6 +66,10 @@ struct aui_windowconfig {
 
 struct aui_buttonconfig {
     const char *text; /* Should not be allocated, string literal */
+};
+
+struct aui_frameconfig {
+    struct aui_color bg;
 };
 
 void aui_run(void);

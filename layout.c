@@ -18,7 +18,7 @@ can_add(struct aui_widget *widget, enum aui_layout_type type)
 
     struct aui_container *con = (struct aui_container *)parent;
 
-    if ((con->layout_type != type) && (con->layout_type != AUI_LAYOUT_NONE && con->map_count != 0)) {
+    if ((con->layout_type != type) && (con->layout_type != AUI_LAYOUT_NONE)) {
         fprintf(stderr, "libaui: cannot map as mismatching type / non-empty container\n");
         return -1;
     }
@@ -91,7 +91,6 @@ layout_organize(struct aui_widget *widget)
             geom.x += dx;
             geom.y += dy;
             child->in_ops->set_geometry(child, &geom); 
-            con->map_count++;
 
             switch (child->type) {
             case WIDGET_TYPE_FRAME:
@@ -103,48 +102,68 @@ layout_organize(struct aui_widget *widget)
         }
         break;
     case AUI_LAYOUT_GRID: {
-        unsigned int cell_size[2] = { 50, 50 };
-        unsigned int *added = calloc(con->grid_size[0], sizeof(unsigned int));
-        unsigned int *radded = calloc(con->grid_size[1], sizeof(unsigned int));
+        uint8_t *rmap = calloc(con->grid_size[1], sizeof(uint8_t));
+        uint8_t *cmap = calloc(con->grid_size[0], sizeof(uint8_t));
+
+        unsigned int *rsize = calloc(con->grid_size[1], sizeof(unsigned int));
+        unsigned int *csize = calloc(con->grid_size[0], sizeof(unsigned int));
 
         TAILQ_FOREACH(child, &widget->queue, entries) {
             if (child->mapped == 0)
                 continue;
 
+            struct aui_geometry min = child->in_ops->get_min_size(child);
+
+            rmap[child->gridpar.row] = 1;
+            cmap[child->gridpar.column] = 1;
+
+            rsize[child->gridpar.row] = (rsize[child->gridpar.row] < min.height) ?
+                min.height : rsize[child->gridpar.row];
+
+            csize[child->gridpar.column] = (csize[child->gridpar.column] < min.width) ?
+                min.width : csize[child->gridpar.column];
+        }
+
+        unsigned int *rpos = calloc(con->grid_size[1], sizeof(unsigned int));
+        unsigned int *cpos = calloc(con->grid_size[0], sizeof(unsigned int));
+
+        unsigned int rowdt = 0;
+        unsigned int coldt = 0;
+
+        for (int r = 0; r < con->grid_size[1]; r++) {
+            rpos[r] = rowdt;
+            rowdt = (rmap[r] == 1) ? rowdt + rsize[r] : rowdt;
+        }
+
+        for (int c = 0; c < con->grid_size[0]; c++) {
+            cpos[c] = coldt;
+            coldt = (cmap[c] == 1) ? coldt + csize[c] : coldt;
+        }
+
+        TAILQ_FOREACH(child, &widget->queue, entries) {
+            if (child->mapped == 0)
+                continue;
+
+            struct aui_geometry min = child->in_ops->get_min_size(child);
             struct aui_geometry geom = { 0 };
-            struct aui_widget *sub;
 
-            geom.x = widget->geom.x;
-            geom.y = widget->geom.y;
+            int dx = (csize[child->gridpar.column] - min.width);
+            int dy = (rsize[child->gridpar.row] - min.height);
 
-            memset(added, 0, sizeof(unsigned int) * con->grid_size[0]);
-            memset(radded, 0, sizeof(unsigned int) * con->grid_size[1]);
-
-            TAILQ_FOREACH(sub, &widget->queue, entries) {
-                if (sub->mapped == 0 || sub == child)
-                    continue;
-
-                if (sub->gridpar.column < child->gridpar.column && added[sub->gridpar.column] == 0) {
-                    added[sub->gridpar.column] = 1;
-                    geom.x += cell_size[0];
-                }
-
-                if (sub->gridpar.row < child->gridpar.row && radded[sub->gridpar.row] == 0) {
-                    radded[sub->gridpar.row] = 1;
-                    geom.y += cell_size[1];
-                }
-            }
-
-            geom.width = cell_size[0];
-            geom.height = cell_size[1];
+            geom.x = widget->geom.x + cpos[child->gridpar.column] + dx / 2;
+            geom.y = widget->geom.y + rpos[child->gridpar.row] + dy / 2;
+            geom.width = min.width;
+            geom.height = min.height;
 
             child->in_ops->set_geometry(child, &geom);
         }
 
-        free(added);
-        free(radded);
-
-        con->map_count++;
+        free(rsize);
+        free(csize);
+        free(rpos);
+        free(cpos);
+        free(rmap);
+        free(cmap);
 
         TAILQ_FOREACH(child, &widget->queue, entries) {
             switch (child->type) {

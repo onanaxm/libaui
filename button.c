@@ -11,6 +11,7 @@ static void button_mouse_press(struct aui_widget *, uint16_t, uint16_t, uint8_t)
 static void button_mouse_release(struct aui_widget *, uint16_t, uint16_t, uint8_t);
 static void button_set_geometry(struct aui_widget *, struct aui_geometry *);
 static void button_free(struct aui_widget *);
+static struct aui_geometry button_get_min_size(struct aui_widget *);
 
 static struct widget_ops button_ops = {
     button_mouse_hover,
@@ -19,6 +20,7 @@ static struct widget_ops button_ops = {
     button_mouse_release,
     button_set_geometry, /* set geometry */
     button_free,
+    button_get_min_size,
 };
 
 struct aui_color color[] = {
@@ -124,4 +126,16 @@ button_set_geometry(struct aui_widget *widget, struct aui_geometry *geom)
     driver->ops->set_rectangle_geometry(widget->window, widget->primitives.list[0], geom);
     driver->ops->set_rectangle_geometry(widget->window, widget->primitives.list[1], &fgeom);
     driver->ops->set_text(widget->primitives.list[2], button->config.text, tx, ty);
+}
+
+static struct aui_geometry 
+button_get_min_size(struct aui_widget *widget)
+{
+    struct aui_geometry geom = driver->ops->get_text_geometry(widget->primitives.list[2]);
+    struct aui_button *button = (struct aui_button *)widget;
+
+    geom.width = (geom.width < 20) ? geom.width = 20 : geom.width + 20;
+    geom.height = (button->config.text == NULL) ? 12 + 20 : geom.height + 20;
+
+    return geom;
 }
