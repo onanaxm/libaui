@@ -92,6 +92,9 @@ aui_run(void)
                 struct aui_event_resize *rze = (struct aui_event_resize *)ev;
                 struct aui_window *aw = ev->aw;
 
+                aw->config.width = rze->new_w;
+                aw->config.height = rze->new_h;
+
                 driver->ops->resize_window(aw);
                 free((void *)rze);
 

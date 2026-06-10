@@ -114,13 +114,15 @@ static void
 button_set_geometry(struct aui_widget *widget, struct aui_geometry *geom)
 {
     struct aui_button *button = (struct aui_button *)widget;
-    struct aui_geometry fgeom = { .x = geom->x + 1,
-                                  .y = geom->y + 1,
-                                  .width =  geom->width - 2,
-                                  .height = geom->height - 2 };
+    struct aui_geometry fgeom = { 0 };
     struct aui_geometry tgeom = driver->ops->get_text_geometry(widget->primitives.list[2]);
     int tx = geom->x + geom->width / 2 - tgeom.width / 2;
     int ty = geom->y + geom->height / 2 + tgeom.height / 2;
+
+    fgeom.x = geom->x + 1;
+    fgeom.y = geom->y + 1;
+    fgeom.width = geom->width - 2;
+    fgeom.height = geom->height - 2;
 
     memcpy(&widget->geom, geom, sizeof(struct aui_geometry));
     driver->ops->set_rectangle_geometry(widget->window, widget->primitives.list[0], geom);
@@ -134,7 +136,7 @@ button_get_min_size(struct aui_widget *widget)
     struct aui_geometry geom = driver->ops->get_text_geometry(widget->primitives.list[2]);
     struct aui_button *button = (struct aui_button *)widget;
 
-    geom.width = (geom.width < 20) ? geom.width = 20 : geom.width + 20;
+    geom.width = (geom.width < 30) ? geom.width = 30 : geom.width + 30;
     geom.height = (button->config.text == NULL) ? 12 + 20 : geom.height + 20;
 
     return geom;

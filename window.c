@@ -14,6 +14,7 @@ static void window_mouse_unhover(struct aui_widget *);
 static void window_mouse_press(struct aui_widget *, uint16_t, uint16_t, uint8_t);
 static void window_mouse_release(struct aui_widget *, uint16_t, uint16_t, uint8_t);
 static void window_free(struct aui_widget *);
+static struct aui_geometry window_get_min_size(struct aui_widget *);
 
 static struct widget_ops window_ops = {
     window_mouse_hover,
@@ -22,6 +23,7 @@ static struct widget_ops window_ops = {
     window_mouse_release,
     NULL, /* set geomtry */
     window_free,
+    window_get_min_size,
 };
 
 static struct aui_windowconfig default_config = {
@@ -127,4 +129,14 @@ window_mouse_release(struct aui_widget *widget, uint16_t x, uint16_t y, uint8_t 
 
         window_mouse_hover(widget, x, y);
     }
+}
+
+static struct aui_geometry
+window_get_min_size(struct aui_widget *widget)
+{
+    struct aui_window *aw = (struct aui_window *)widget;
+    struct aui_geometry geom = { 0 };
+    geom.width = aw->config.width;
+    geom.height = aw->config.height;
+    return geom;
 }

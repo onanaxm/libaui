@@ -176,20 +176,54 @@ layout_organize(struct aui_widget *widget)
         }
         break;
     }
+    /*
+     * As far as I'm aware of, Tk's pack is just a rectangle that shrinks
+     * depending on the side of the widget being added.
+     */
     case AUI_LAYOUT_PACK: {
-        unsigned int cell_size[] = { 50, 50 };
-        struct aui_geometry geom = { 0 };
-        struct aui_placepar *par = NULL;
-        int dx = 0, dy = 0;
+        struct aui_geometry space = widget->in_ops->get_min_size(widget);
 
         TAILQ_FOREACH(child, &widget->queue, entries) {
-            geom.height = cell_size[1];
-            geom.width = cell_size[0];
-            geom.y = dy;
-            geom.x = widget->geom.x + widget->geom.width/2 - geom.width / 2;
+            if (child->mapped == 0)
+                continue;
 
-            dy += geom.height;
-            child->in_ops->set_geometry(child, &geom);
+            struct aui_geometry cgeom = child->in_ops->get_min_size(child);
+
+            switch (child->packpar.side) {
+                case AUI_SIDE_TOP:
+                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                    cgeom.x = space.x + space.width / 2 - cgeom.width / 2;
+                    cgeom.y = space.y;
+                    space.y += cgeom.height;
+                    space.height -= cgeom.height;
+                    break;
+                case AUI_SIDE_LEFT:
+                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                    cgeom.x = space.x;
+                    cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
+                    space.width -= cgeom.width;
+                    space.x += cgeom.width;
+                    break;
+                case AUI_SIDE_RIGHT:
+                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                    cgeom.x = space.x + space.width - cgeom.width;
+                    cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
+                    space.width -= cgeom.width;
+                    break;
+                case AUI_SIDE_BOTTOM:
+                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                    cgeom.x = space.x + space.width / 2 - cgeom.width / 2;
+                    cgeom.y = space.y + space.height - cgeom.height;
+                    space.height -= cgeom.height;
+                    break;
+                default:
+                    continue;
+            }
+            child->in_ops->set_geometry(child, &cgeom);
         }
 
         TAILQ_FOREACH(child, &widget->queue, entries) {
