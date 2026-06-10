@@ -31,7 +31,6 @@ layout_organize(struct aui_widget *widget)
 {
     struct aui_container *con = (struct aui_container *)widget;
     struct aui_widget *child;
-    int dx, dy;
 
     switch (con->layout_type) {
     case AUI_LAYOUT_PLACE:
@@ -40,6 +39,7 @@ layout_organize(struct aui_widget *widget)
                 continue;
 
             struct aui_placepar *par = &child->placepar;
+            int dx = 0, dy = 0;
 
             struct aui_geometry geom = { 
                 .x = widget->geom.x + child->placepar.x + widget->geom.width * child->placepar.relx,
@@ -179,6 +179,10 @@ layout_organize(struct aui_widget *widget)
     /*
      * As far as I'm aware of, Tk's pack is just a rectangle that shrinks
      * depending on the side of the widget being added.
+     *
+     * The fill attribute is a bit tricky. You can set it to x, y and both
+     * but you have to keep in mind that x only works on side top and bottom
+     * and y works on side left and right.
      */
     case AUI_LAYOUT_PACK: {
         struct aui_geometry space = widget->in_ops->get_min_size(widget);
@@ -190,38 +194,120 @@ layout_organize(struct aui_widget *widget)
             struct aui_geometry cgeom = child->in_ops->get_min_size(child);
 
             switch (child->packpar.side) {
-                case AUI_SIDE_TOP:
-                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
-                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+            case AUI_SIDE_TOP:
+                cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                switch (child->packpar.anchor) {
+                case AUI_ANCHOR_CENTER:
+                case AUI_ANCHOR_N:
+                case AUI_ANCHOR_S:
                     cgeom.x = space.x + space.width / 2 - cgeom.width / 2;
                     cgeom.y = space.y;
-                    space.y += cgeom.height;
-                    space.height -= cgeom.height;
                     break;
-                case AUI_SIDE_LEFT:
-                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
-                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                case AUI_ANCHOR_NW:
+                case AUI_ANCHOR_SW:
+                case AUI_ANCHOR_W:
                     cgeom.x = space.x;
-                    cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
-                    space.width -= cgeom.width;
-                    space.x += cgeom.width;
+                    cgeom.y = space.y;
                     break;
-                case AUI_SIDE_RIGHT:
-                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
-                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                case AUI_ANCHOR_NE:
+                case AUI_ANCHOR_SE:
+                case AUI_ANCHOR_E:
                     cgeom.x = space.x + space.width - cgeom.width;
-                    cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
-                    space.width -= cgeom.width;
-                    break;
-                case AUI_SIDE_BOTTOM:
-                    cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
-                    cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
-                    cgeom.x = space.x + space.width / 2 - cgeom.width / 2;
-                    cgeom.y = space.y + space.height - cgeom.height;
-                    space.height -= cgeom.height;
+                    cgeom.y = space.y;
                     break;
                 default:
-                    continue;
+                    break;
+                }
+                space.y += cgeom.height;
+                space.height -= cgeom.height;
+                break;
+            case AUI_SIDE_LEFT:
+                cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                cgeom.x = space.x;
+                cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
+                switch (child->packpar.anchor) {
+                case AUI_ANCHOR_CENTER:
+                case AUI_ANCHOR_E:
+                case AUI_ANCHOR_W:
+                    cgeom.x = space.x;
+                    cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
+                    break;
+                case AUI_ANCHOR_N:
+                case AUI_ANCHOR_NE:
+                case AUI_ANCHOR_NW:
+                    cgeom.x = space.x;
+                    cgeom.y = space.y;
+                    break;
+                case AUI_ANCHOR_S:
+                case AUI_ANCHOR_SE:
+                case AUI_ANCHOR_SW:
+                    cgeom.x = space.x;
+                    cgeom.y = space.y + space.height - cgeom.height;
+                    break;
+                default:
+                    break;
+                }
+                space.width -= cgeom.width;
+                space.x += cgeom.width;
+                break;
+            case AUI_SIDE_RIGHT:
+                cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                switch (child->packpar.anchor) {
+                case AUI_ANCHOR_CENTER:
+                case AUI_ANCHOR_E:
+                case AUI_ANCHOR_W:
+                    cgeom.x = space.x + space.width - cgeom.width;
+                    cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
+                    break;
+                case AUI_ANCHOR_N:
+                case AUI_ANCHOR_NE:
+                case AUI_ANCHOR_NW:
+                    cgeom.x = space.x + space.width - cgeom.width;
+                    cgeom.y = space.y;
+                    break;
+                case AUI_ANCHOR_S:
+                case AUI_ANCHOR_SE:
+                case AUI_ANCHOR_SW:
+                    cgeom.x = space.x + space.width - cgeom.width;
+                    cgeom.y = space.y + space.height - cgeom.height;
+                    break;
+                default:
+                    break;
+                }
+                space.width -= cgeom.width;
+                break;
+            case AUI_SIDE_BOTTOM:
+                cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
+                cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+                switch (child->packpar.anchor) {
+                case AUI_ANCHOR_CENTER:
+                case AUI_ANCHOR_N:
+                case AUI_ANCHOR_S:
+                    cgeom.x = space.x + space.width / 2 - cgeom.width / 2;
+                    cgeom.y = space.y + space.height - cgeom.height;
+                    break;
+                case AUI_ANCHOR_NW:
+                case AUI_ANCHOR_SW:
+                case AUI_ANCHOR_W:
+                    cgeom.x = space.x;
+                    cgeom.y = space.y + space.height - cgeom.height;
+                    break;
+                case AUI_ANCHOR_NE:
+                case AUI_ANCHOR_SE:
+                case AUI_ANCHOR_E:
+                    cgeom.x = space.x + space.width - cgeom.width;
+                    cgeom.y = space.y + space.height - cgeom.height;
+                    break;
+                default:
+                    break;
+                }
+                space.height -= cgeom.height;
+                break;
+            default:
+                continue;
             }
             child->in_ops->set_geometry(child, &cgeom);
         }

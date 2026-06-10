@@ -32,6 +32,11 @@ struct aui_placepar {
 
 struct aui_packpar {
     unsigned char anchor;
+#define AUI_FILL_NONE   0
+#define AUI_FILL_X      1
+#define AUI_FILL_Y      2
+#define AUI_FILL_BOTH   3
+    unsigned char fill;
 #define AUI_SIDE_TOP        1
 #define AUI_SIDE_RIGHT      2
 #define AUI_SIDE_LEFT       3
