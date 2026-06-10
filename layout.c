@@ -183,6 +183,12 @@ layout_organize(struct aui_widget *widget)
      * The fill attribute is a bit tricky. You can set it to x, y and both
      * but you have to keep in mind that x only works on side top and bottom
      * and y works on side left and right.
+     *
+     * Keep in mind that expand can make the fill atributte that doesn't
+     * usually work on a side to changes its geometry.
+     *
+     * To implement expand, its necessary to do 2-passes. The first pass is
+     * to calculate extra spaces. The second pass is for changing geometry.
      */
     case AUI_LAYOUT_PACK: {
         struct aui_geometry space = widget->in_ops->get_min_size(widget);
@@ -197,6 +203,18 @@ layout_organize(struct aui_widget *widget)
             case AUI_SIDE_TOP:
                 cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
                 cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+
+                switch (child->packpar.fill) {
+                    case AUI_FILL_X:
+                        cgeom.width = space.width;
+                        break;
+                    case AUI_FILL_BOTH:
+                        cgeom.width = space.width;
+                        break;
+                    case AUI_FILL_NONE:
+                    default:
+                        break;
+                }
                 switch (child->packpar.anchor) {
                 case AUI_ANCHOR_CENTER:
                 case AUI_ANCHOR_N:
@@ -227,6 +245,18 @@ layout_organize(struct aui_widget *widget)
                 cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
                 cgeom.x = space.x;
                 cgeom.y = space.y + space.height / 2 - cgeom.height / 2;
+
+                switch (child->packpar.fill) {
+                    case AUI_FILL_Y:
+                        cgeom.height = space.height;
+                        break;
+                    case AUI_FILL_BOTH:
+                        cgeom.height = space.height;
+                        break;
+                    case AUI_FILL_NONE:
+                    default:
+                        break;
+                }
                 switch (child->packpar.anchor) {
                 case AUI_ANCHOR_CENTER:
                 case AUI_ANCHOR_E:
@@ -255,6 +285,18 @@ layout_organize(struct aui_widget *widget)
             case AUI_SIDE_RIGHT:
                 cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
                 cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+
+                switch (child->packpar.fill) {
+                    case AUI_FILL_Y:
+                        cgeom.height = space.height;
+                        break;
+                    case AUI_FILL_BOTH:
+                        cgeom.height = space.height;
+                        break;
+                    case AUI_FILL_NONE:
+                    default:
+                        break;
+                }
                 switch (child->packpar.anchor) {
                 case AUI_ANCHOR_CENTER:
                 case AUI_ANCHOR_E:
@@ -282,6 +324,18 @@ layout_organize(struct aui_widget *widget)
             case AUI_SIDE_BOTTOM:
                 cgeom.width = (cgeom.width > space.width) ? space.width : cgeom.width;
                 cgeom.height = (cgeom.height > space.height) ? space.height : cgeom.height;
+
+                switch (child->packpar.fill) {
+                    case AUI_FILL_X:
+                        cgeom.width = space.width;
+                        break;
+                    case AUI_FILL_BOTH:
+                        cgeom.width = space.width;
+                        break;
+                    case AUI_FILL_NONE:
+                    default:
+                        break;
+                }
                 switch (child->packpar.anchor) {
                 case AUI_ANCHOR_CENTER:
                 case AUI_ANCHOR_N:
