@@ -1,0 +1,6 @@
+libaui - A User Interface Library
+
+Minimal, portable and simple. This library is inspired by Tk.
+The goal of this library is not to be competing with popular
+UI toolkits but rather offer a simple codebase that can be
+used for studying.

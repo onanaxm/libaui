@@ -1,0 +1,109 @@
+.Dd $Mdocdate: July 14 2026$
+.Dt AUI_RUN 3
+.Os
+.Sh NAME
+.Nm aui_run ,
+.Nm aui_destroy ,
+.Nm aui_window_new ,
+.Nm aui_button_new ,
+.Nm aui_button_config ,
+.Nm aui_frame_new ,
+.Nm aui_frame_config ,
+.Nm aui_label_new ,
+.Nm aui_label_config ,
+.Nm aui_canvas_new ,
+.Nm aui_canvas_config ,
+.Nm aui_place ,
+.Nm aui_pack ,
+.Nm aui_grid ,
+.Nm aui_getplacepar ,
+.Nm aui_getgridpar ,
+.Nm aui_getpackpar
+.Sh SYNOPSIS
+.In aui.h
+.Ft void
+.Fn aui_run "void"
+.Ft void
+.Fn aui_destroy "struct aui_widget *"
+.Ft struct aui_window*
+.Fn aui_window_new "struct aui_window_config * config"
+.Ft struct aui_button*
+.Fn aui_button_new "struct aui_widget * parent" "struct aui_button_config * config"
+.Ft int
+.Fn aui_button_config "struct aui_widget * widget" "struct aui_button_config * config"
+.Ft struct aui_label*
+.Fn aui_label_new "struct aui_widget * parent" "struct aui_label_config * config"
+.Ft int
+.Fn aui_label_config "struct aui_widget * widget" "struct aui_label_config * config"
+.Ft struct aui_frame*
+.Fn aui_frame_new "struct aui_widget * parent" "struct aui_frame_config * config"
+.Ft int
+.Fn aui_frame_config "struct aui_widget * widget" "struct aui_frame_config * config"
+.Ft struct aui_canvas*
+.Fn aui_canvas_new "struct aui_widget * widget" "struct aui_canvas_config * config"
+.Ft int
+.Fn aui_canvas_config "struct aui_widget * parent" "struct aui_canvas_config * config"
+.Ft int
+.Fn aui_place "struct aui_widget * widget" "struct aui_placepar * par"
+.Ft int
+.Fn aui_grid "struct aui_widget * widget" "struct aui_gridpar * par"
+.Ft int
+.Fn aui_pack "struct aui_widget * widget" "struct aui_packpar * par"
+.Ft int
+.Fn aui_getplacepar "struct aui_widget * widget"
+.Ft int
+.Fn aui_getgridpar "struct aui_widget * widget"
+.Ft int
+.Fn aui_getpackpar "struct aui_widget * widget"
+.Sh DESCRIPTION
+Assides for windows, every widget must take a container in order to be
+created. The containers can be a window or a frame. Once a widget is
+created it can be mapped using place, grid or pack.
+.Pp
+Canvases are also containers although they cannot take widgets as childrens.
+.Sh EXAMPLES
+Creating a basic window is done with the following.
+.Bd -literal -offset indent
+struct aui_window *aw = aui_window_new(NULL);
+.Ed
+.Pp
+Afterwards the mainloop can be started using:
+.Bd -literal -offset indent
+aui_run();
+.Ed
+.Pp
+As for buttons they can be created using the following:
+.Bd -literal -offset indent
+struct aui_button *btn = aui_button_new(AUI_WIDGET(aw));
+.Ed
+.Pp
+The AUI_WIDGET macro must be used in order to pass widgets so the
+.Nm aui
+library can understand. In the example above aw can be switched for a
+container like frame. Here is an example.
+.Pp
+.Bd -literal -offset indent
+struct aui_frame *frame = aui_frame_new(AUI_WIDGET(aw), NULL);
+struct aui_button *btn = aui_button_new(AUI_WIDGET(frame), NULL);
+.Ed
+.Pp
+Adding widgets to containers does not make them directly visible. You must
+first pack, place or grid them for them to be mapped.
+.Pp
+.Bd -literal -offset indent
+aui_pack(AUI_WIDGET(btn), NULL);
+.Ed
+.Pp
+It is important to keep in mind that operations for 
+.Nm aui 
+must be done before
+.Nm aui_run 
+in a single threaded program.
+.Sh RETURN VALUES
+For all these function, if the output is -1 or NULL it means an error. Otherwise,
+the function was successful.
+.Sh AUTHORS
+The
+.Nm aui
+library was written by
+.An Onana Onana Xavier Manuel .
